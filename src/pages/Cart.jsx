@@ -30,10 +30,10 @@ const Cart = () => {
           {cartItems.map((item) => (
             <div key={item.id} className="cart-item">
               <div className="cart-item-img">
-                {item.product?.imageUrl ? (
-                  <img src={item.product.imageUrl} alt={item.product.name} />
+                {item.productImageUrl ? (
+                  <img src={item.productImageUrl} alt={item.productName} />
                 ) : (
-                  <div className="img-placeholder">🗺️</div>
+                  <div className="img-placeholder">🛍️</div>
                 )}
               </div>
               <div className="cart-item-info">
@@ -41,10 +41,10 @@ const Cart = () => {
                   to={`/products/${item.productId}`}
                   className="cart-item-name"
                 >
-                  {item.product?.name}
+                  {item.productName}
                 </Link>
                 <p className="cart-item-price">
-                  {item.product?.price?.toLocaleString("vi-VN")}₫
+                  {item.unitPrice?.toLocaleString("vi-VN")}₫
                 </p>
               </div>
               <div className="quantity-control">
@@ -62,10 +62,7 @@ const Cart = () => {
                 </button>
               </div>
               <p className="cart-item-subtotal">
-                {(item.quantity * (item.product?.price || 0)).toLocaleString(
-                  "vi-VN",
-                )}
-                ₫
+                {item.subTotal?.toLocaleString("vi-VN")}₫
               </p>
               <button
                 className="btn-icon-danger"

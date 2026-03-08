@@ -16,6 +16,7 @@ import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
+import PostProduct from "./pages/PostProduct";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -77,6 +78,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <OrderDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/post-product"
+                element={
+                  <ProtectedRoute>
+                    <PostProduct />
                   </ProtectedRoute>
                 }
               />

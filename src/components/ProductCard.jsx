@@ -8,6 +8,11 @@ const ProductCard = ({ product }) => {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
+  const discount =
+    product.originalPrice && product.originalPrice > product.price
+      ? Math.round((1 - product.price / product.originalPrice) * 100)
+      : null;
+
   const handleAddToCart = async (e) => {
     e.preventDefault();
     if (!isLoggedIn) {
@@ -16,7 +21,6 @@ const ProductCard = ({ product }) => {
     }
     try {
       await addToCart(product.id, 1);
-      alert("Đã thêm vào giỏ hàng!");
     } catch {
       alert("Có lỗi xảy ra!");
     }
@@ -29,15 +33,25 @@ const ProductCard = ({ product }) => {
           {product.imageUrl ? (
             <img src={product.imageUrl} alt={product.name} />
           ) : (
-            <div className="img-placeholder">🗺️</div>
+            <div className="img-placeholder">🛍️</div>
+          )}
+          {discount && (
+            <span className="product-card-discount">-{discount}%</span>
           )}
         </div>
         <div className="product-card-body">
           <h3 className="product-card-name">{product.name}</h3>
           <p className="product-card-category">{product.categoryName || ""}</p>
-          <p className="product-card-price">
-            {product.price?.toLocaleString("vi-VN")}₫
-          </p>
+          <div className="product-card-price-row">
+            <span className="product-card-price">
+              {product.price?.toLocaleString("vi-VN")}đ
+            </span>
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="product-card-orig-price">
+                {product.originalPrice?.toLocaleString("vi-VN")}đ
+              </span>
+            )}
+          </div>
         </div>
       </Link>
       <div className="product-card-footer">

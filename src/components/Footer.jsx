@@ -2,7 +2,7 @@ const Footer = () => (
   <footer className="footer">
     <div className="footer-container">
       <div className="footer-col">
-        <h3>�️ ShopOnline</h3>
+        <h3>Mua Hàng Giá Tốt</h3>
         <p>Nơi mua sắm trực tuyến đa dạng sản phẩm, chất lượng cao.</p>
       </div>
       <div className="footer-col">

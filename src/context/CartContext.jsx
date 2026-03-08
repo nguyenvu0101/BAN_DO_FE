@@ -23,7 +23,7 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       const res = await cartService.getCart();
-      setCartItems(res.data || []);
+      setCartItems(res.data?.items || []);
     } catch {
       setCartItems([]);
     } finally {
@@ -57,7 +57,7 @@ export const CartProvider = ({ children }) => {
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cartItems.reduce(
-    (sum, item) => sum + item.quantity * (item.product?.price || 0),
+    (sum, item) => sum + (item.subTotal || 0),
     0,
   );
 

@@ -13,6 +13,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [activeImg, setActiveImg] = useState(0);
 
   useEffect(() => {
     productService
@@ -41,42 +42,111 @@ const ProductDetail = () => {
   if (loading) return <div className="container text-center">Đang tải...</div>;
   if (!product) return null;
 
+  const images = product.imageUrls?.length
+    ? product.imageUrls
+    : product.imageUrl
+      ? [product.imageUrl]
+      : [];
+  const discount =
+    product.originalPrice && product.originalPrice > product.price
+      ? Math.round((1 - product.price / product.originalPrice) * 100)
+      : null;
+  const inStock = product.stockQuantity > 0;
+
   return (
-    <div className="container">
-      <div className="product-detail">
-        <div className="product-detail-img">
-          {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} />
-          ) : (
-            <div className="img-placeholder-lg">🗺️</div>
+    <div className="container" style={{ padding: "32px 20px" }}>
+      <div className="pd-wrapper">
+        {/* Image gallery */}
+        <div className="pd-gallery">
+          <div className="pd-main-img">
+            {images.length > 0 ? (
+              <img src={images[activeImg]} alt={product.name} />
+            ) : (
+              <div className="img-placeholder-lg">🛍️</div>
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="pd-thumbnails">
+              {images.map((url, idx) => (
+                <button
+                  key={idx}
+                  className={`pd-thumb${activeImg === idx ? " active" : ""}`}
+                  onClick={() => setActiveImg(idx)}
+                >
+                  <img src={url} alt={`Ảnh ${idx + 1}`} />
+                </button>
+              ))}
+            </div>
           )}
         </div>
-        <div className="product-detail-info">
-          <p className="product-detail-category">{product.categoryName}</p>
-          <h1 className="product-detail-name">{product.name}</h1>
-          <p className="product-detail-price">
-            {product.price?.toLocaleString("vi-VN")}₫
-          </p>
-          <p className="product-detail-desc">{product.description}</p>
-          <p className="product-detail-stock">
-            {product.stock > 0
-              ? `✅ Còn hàng (${product.stock})`
-              : "❌ Hết hàng"}
-          </p>
-          <div className="product-detail-actions">
+
+        {/* Info panel */}
+        <div className="pd-info">
+          <span className="pd-category-badge">{product.categoryName}</span>
+          <h1 className="pd-name">{product.name}</h1>
+
+          <div className="pd-price-box">
+            <span className="pd-price">
+              {product.price?.toLocaleString("vi-VN")}đ
+            </span>
+            {discount && (
+              <>
+                <span className="pd-original-price">
+                  {product.originalPrice?.toLocaleString("vi-VN")}đ
+                </span>
+                <span className="pd-discount-badge">-{discount}%</span>
+              </>
+            )}
+          </div>
+
+          {product.description && (
+            <p className="pd-desc">{product.description}</p>
+          )}
+
+          <div className="pd-meta-row">
+            <span className="pd-meta-label">Tình trạng</span>
+            {inStock ? (
+              <span className="pd-in-stock">
+                ✓ Còn hàng ({product.stockQuantity})
+              </span>
+            ) : (
+              <span className="pd-out-stock">× Hết hàng</span>
+            )}
+          </div>
+
+          <div className="pd-meta-row">
+            <span className="pd-meta-label">Số lượng</span>
             <div className="quantity-control">
               <button onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
                 −
               </button>
               <span>{quantity}</span>
-              <button onClick={() => setQuantity((q) => q + 1)}>+</button>
+              <button
+                onClick={() =>
+                  setQuantity((q) =>
+                    Math.min(product.stockQuantity || 99, q + 1),
+                  )
+                }
+              >
+                +
+              </button>
             </div>
+          </div>
+
+          <div className="pd-actions">
             <button
-              className="btn btn-primary"
+              className="pd-btn-cart"
               onClick={handleAddToCart}
-              disabled={adding || product.stock === 0}
+              disabled={adding || !inStock}
             >
-              {adding ? "Đang thêm..." : "🛒 Thêm vào giỏ"}
+              🛒 Thêm Vào Giỏ Hàng
+            </button>
+            <button
+              className="pd-btn-buy"
+              onClick={handleAddToCart}
+              disabled={adding || !inStock}
+            >
+              Mua Ngay
             </button>
           </div>
         </div>

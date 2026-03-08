@@ -9,8 +9,9 @@ const Shop = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const categoryId = searchParams.get("category");
+  // sync search box with ?q= param from navbar search
+  const [search, setSearch] = useState(searchParams.get("q") || "");
 
   useEffect(() => {
     categoryService.getAll().then((res) => setCategories(res.data));
@@ -25,14 +26,23 @@ const Shop = () => {
       .finally(() => setLoading(false));
   }, [categoryId]);
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const selectCategory = (params) => {
+    setSearch("");
+    setProducts([]);
+    setLoading(true);
+    setSearchParams(params);
+  };
+
+  const filtered = products.filter((p) => {
+    const name = (p.name || "").toLowerCase().normalize("NFC");
+    const q = search.toLowerCase().normalize("NFC");
+    return name.includes(q);
+  });
 
   return (
     <div className="container">
       <div className="shop-header">
-        <h1>🗺️ Tất cả sản phẩm</h1>
+        <h1> Tất cả sản phẩm</h1>
         <input
           type="text"
           className="form-input search-input"
@@ -50,7 +60,7 @@ const Shop = () => {
             <li>
               <button
                 className={`category-btn ${!categoryId ? "active" : ""}`}
-                onClick={() => setSearchParams({})}
+                onClick={() => selectCategory({})}
               >
                 Tất cả
               </button>
@@ -59,7 +69,7 @@ const Shop = () => {
               <li key={cat.id}>
                 <button
                   className={`category-btn ${categoryId === String(cat.id) ? "active" : ""}`}
-                  onClick={() => setSearchParams({ category: cat.id })}
+                  onClick={() => selectCategory({ category: cat.id })}
                 >
                   {cat.name}
                 </button>

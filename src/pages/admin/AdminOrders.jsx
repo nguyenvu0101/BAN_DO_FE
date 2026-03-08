@@ -3,15 +3,15 @@ import orderService from "../../services/orderService";
 
 const STATUS_OPTIONS = [
   "Pending",
-  "Processing",
-  "Shipped",
+  "Confirmed",
+  "Shipping",
   "Delivered",
   "Cancelled",
 ];
 const STATUS_LABEL = {
-  Pending: "Chờ xử lý",
-  Processing: "Đang xử lý",
-  Shipped: "Đang giao",
+  Pending: "Chờ xác nhận",
+  Confirmed: "Đã xác nhận",
+  Shipping: "Đang giao hàng",
   Delivered: "Đã giao",
   Cancelled: "Đã hủy",
 };
@@ -70,13 +70,13 @@ const AdminOrders = () => {
             {orders.map((o) => (
               <tr key={o.id}>
                 <td>#{o.id}</td>
-                <td>{o.userName || o.userId}</td>
+                <td>{o.fullName || o.username}</td>
                 <td>{o.shippingAddress}</td>
                 <td>{o.totalAmount?.toLocaleString("vi-VN")}₫</td>
                 <td>
                   <select
                     className="form-input form-input-sm"
-                    value={o.status}
+                    value={o.statusName}
                     onChange={(e) => handleStatusChange(o.id, e.target.value)}
                   >
                     {STATUS_OPTIONS.map((s) => (

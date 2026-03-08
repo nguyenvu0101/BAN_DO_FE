@@ -4,9 +4,9 @@ import orderService from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
 
 const STATUS_LABEL = {
-  Pending: "Chờ xử lý",
-  Processing: "Đang xử lý",
-  Shipped: "Đang giao",
+  Pending: "Chờ xác nhận",
+  Confirmed: "Đã xác nhận",
+  Shipping: "Đang giao hàng",
   Delivered: "Đã giao",
   Cancelled: "Đã hủy",
 };
@@ -37,13 +37,13 @@ const OrderDetail = () => {
 
   return (
     <div className="container">
-      <h1 className="page-title">📦 Chi tiết đơn hàng #{order.id}</h1>
+      <h1 className="page-title">📦 Chi tiết đơn hàng</h1>
       <div className="order-detail-card">
         <div className="order-detail-meta">
           <div>
             <p>
               <strong>Trạng thái:</strong>{" "}
-              {STATUS_LABEL[order.status] || order.status}
+              {STATUS_LABEL[order.statusName] || order.statusName}
             </p>
             <p>
               <strong>Ngày đặt:</strong>{" "}
@@ -71,7 +71,7 @@ const OrderDetail = () => {
             </tr>
           </thead>
           <tbody>
-            {order.orderItems?.map((item) => (
+            {order.items?.map((item) => (
               <tr key={item.id}>
                 <td>{item.productName || item.product?.name}</td>
                 <td>{item.unitPrice?.toLocaleString("vi-VN")}₫</td>
@@ -94,7 +94,7 @@ const OrderDetail = () => {
           </tfoot>
         </table>
 
-        {order.status === "Pending" && !isAdmin && (
+        {order.statusName === "Pending" && !isAdmin && (
           <button className="btn btn-danger" onClick={handleCancel}>
             Hủy đơn hàng
           </button>

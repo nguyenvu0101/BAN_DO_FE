@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import productService from "../../services/productService";
 import categoryService from "../../services/categoryService";
+import api from "../../services/api";
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -8,12 +9,14 @@ const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [images, setImages] = useState([]); // [{ preview, url }]
   const [form, setForm] = useState({
     name: "",
     description: "",
     price: "",
-    stock: "",
-    imageUrl: "",
+    originalPrice: "",
+    stockQuantity: "",
     categoryId: "",
   });
   const [error, setError] = useState("");
@@ -39,16 +42,48 @@ const AdminProducts = () => {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files);
+    const remaining = 5 - images.length;
+    if (remaining <= 0) return;
+    const toUpload = files.slice(0, remaining);
+    setUploading(true);
+    setError("");
+    try {
+      const uploaded = await Promise.all(
+        toUpload.map(async (file) => {
+          const preview = URL.createObjectURL(file);
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await api.post("/upload/image", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          return { preview, url: res.data.url };
+        }),
+      );
+      setImages((prev) => [...prev, ...uploaded]);
+    } catch {
+      setError("Upload ảnh thất bại!");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeImage = (idx) =>
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+
   const openAdd = () => {
     setEditing(null);
     setForm({
       name: "",
       description: "",
       price: "",
-      stock: "",
-      imageUrl: "",
+      originalPrice: "",
+      stockQuantity: "",
       categoryId: "",
     });
+    setImages([]);
     setShowForm(true);
   };
 
@@ -58,10 +93,17 @@ const AdminProducts = () => {
       name: p.name,
       description: p.description || "",
       price: p.price,
-      stock: p.stock,
-      imageUrl: p.imageUrl || "",
+      originalPrice: p.originalPrice || "",
+      stockQuantity: p.stockQuantity ?? p.stock,
       categoryId: p.categoryId,
     });
+    // load existing images
+    const existing = p.imageUrls?.length
+      ? p.imageUrls.map((url) => ({ preview: url, url }))
+      : p.imageUrl
+        ? [{ preview: p.imageUrl, url: p.imageUrl }]
+        : [];
+    setImages(existing);
     setShowForm(true);
   };
 
@@ -69,10 +111,17 @@ const AdminProducts = () => {
     e.preventDefault();
     setError("");
     try {
+      const imageUrls = images.map((img) => img.url);
       const payload = {
-        ...form,
+        name: form.name,
+        description: form.description,
         price: parseFloat(form.price),
-        stock: parseInt(form.stock),
+        originalPrice: form.originalPrice
+          ? parseFloat(form.originalPrice)
+          : null,
+        stockQuantity: parseInt(form.stockQuantity) || 0,
+        imageUrls,
+        imageUrl: imageUrls[0] || null,
         categoryId: parseInt(form.categoryId),
       };
       if (editing) await productService.update(editing.id, payload);
@@ -125,49 +174,102 @@ const AdminProducts = () => {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Giá *</label>
+                  <label>Giá bán (₫) *</label>
                   <input
                     type="number"
                     className="form-input"
                     value={form.price}
                     onChange={set("price")}
                     required
+                    min="0"
                   />
                 </div>
+                <div className="form-group">
+                  <label>
+                    Giá gốc (₫) <span className="text-muted">tuỳ chọn</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={form.originalPrice}
+                    onChange={set("originalPrice")}
+                    min="0"
+                    placeholder="Để trống nếu không có"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
                 <div className="form-group">
                   <label>Tồn kho *</label>
                   <input
                     type="number"
                     className="form-input"
-                    value={form.stock}
-                    onChange={set("stock")}
+                    value={form.stockQuantity}
+                    onChange={set("stockQuantity")}
                     required
+                    min="0"
                   />
+                </div>
+                <div className="form-group">
+                  <label>Danh mục *</label>
+                  <select
+                    className="form-input"
+                    value={form.categoryId}
+                    onChange={set("categoryId")}
+                    required
+                  >
+                    <option value="">-- Chọn danh mục --</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="form-group">
-                <label>Link ảnh</label>
-                <input
-                  className="form-input"
-                  value={form.imageUrl}
-                  onChange={set("imageUrl")}
-                />
-              </div>
-              <div className="form-group">
-                <label>Danh mục *</label>
-                <select
-                  className="form-input"
-                  value={form.categoryId}
-                  onChange={set("categoryId")}
-                  required
-                >
-                  <option value="">-- Chọn danh mục --</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                <label>
+                  Ảnh sản phẩm{" "}
+                  <span className="text-muted">({images.length}/5 ảnh)</span>
+                </label>
+                <div className="multi-image-grid">
+                  {images.map((img, idx) => (
+                    <div key={idx} className="img-thumb-wrap">
+                      <img
+                        src={img.preview}
+                        alt={`Ảnh ${idx + 1}`}
+                        className="img-thumb"
+                      />
+                      <button
+                        type="button"
+                        className="img-remove-btn"
+                        onClick={() => removeImage(idx)}
+                      >
+                        ✕
+                      </button>
+                      {idx === 0 && (
+                        <span className="img-main-badge">Ảnh chính</span>
+                      )}
+                    </div>
                   ))}
-                </select>
+                  {images.length < 5 && (
+                    <label htmlFor="adminImageFiles" className="img-add-btn">
+                      {uploading ? "..." : "+"}
+                      <input
+                        type="file"
+                        id="adminImageFiles"
+                        accept="image/*"
+                        multiple
+                        className="file-input"
+                        onChange={handleImageChange}
+                        disabled={uploading}
+                      />
+                    </label>
+                  )}
+                </div>
+                <p className="text-muted" style={{ marginTop: 6 }}>
+                  Ảnh đầu tiên là ảnh đại diện. JPG, PNG, WEBP — tối đa 5MB/ảnh.
+                </p>
               </div>
               <div className="modal-actions">
                 <button
@@ -177,7 +279,11 @@ const AdminProducts = () => {
                 >
                   Hủy
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={uploading}
+                >
                   Lưu
                 </button>
               </div>
@@ -207,7 +313,7 @@ const AdminProducts = () => {
                 <td>{p.name}</td>
                 <td>{p.categoryName}</td>
                 <td>{p.price?.toLocaleString("vi-VN")}₫</td>
-                <td>{p.stock}</td>
+                <td>{p.stockQuantity ?? p.stock}</td>
                 <td className="table-actions">
                   <button
                     className="btn btn-outline btn-sm"

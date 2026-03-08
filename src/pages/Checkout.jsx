@@ -30,7 +30,7 @@ const Checkout = () => {
         productId: item.productId,
         quantity: item.quantity,
       }));
-      const created = await orderService.create({ ...form, orderItems });
+      const created = await orderService.create({ ...form, items: orderItems });
       await clearCart();
       navigate(`/orders/${created.data.id}`);
     } catch (err) {
@@ -91,14 +91,9 @@ const Checkout = () => {
           {cartItems.map((item) => (
             <div key={item.id} className="checkout-item">
               <span className="checkout-item-name">
-                {item.product?.name} x{item.quantity}
+                {item.productName} x{item.quantity}
               </span>
-              <span>
-                {(item.quantity * (item.product?.price || 0)).toLocaleString(
-                  "vi-VN",
-                )}
-                ₫
-              </span>
+              <span>{item.subTotal?.toLocaleString("vi-VN")}₫</span>
             </div>
           ))}
           <hr />
