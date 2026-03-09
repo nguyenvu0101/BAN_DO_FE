@@ -143,7 +143,15 @@ const ProductDetail = () => {
             </button>
             <button
               className="pd-btn-buy"
-              onClick={handleAddToCart}
+              onClick={() => {
+                if (!isLoggedIn) {
+                  navigate("/login");
+                  return;
+                }
+                navigate("/checkout", {
+                  state: { buyNow: { product, quantity } },
+                });
+              }}
               disabled={adding || !inStock}
             >
               Mua Ngay

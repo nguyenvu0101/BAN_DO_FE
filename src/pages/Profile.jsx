@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import userService from "../services/userService";
+import api from "../services/api";
 
 const Profile = () => {
   const { user: authUser } = useAuth();
@@ -12,6 +13,7 @@ const Profile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -36,12 +38,30 @@ const Profile = () => {
     setSaving(true);
     setMessage("");
     try {
-      await userService.update(authUser.id, form);
+      await userService.update(authUser.userId, form);
       setMessage("✅ Cập nhật thành công!");
     } catch {
       setMessage("❌ Cập nhật thất bại!");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await api.post("/upload/image", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setForm((prev) => ({ ...prev, avatarUrl: res.data.url }));
+    } catch {
+      setMessage("❌ Tải ảnh thất bại!");
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -108,14 +128,26 @@ const Profile = () => {
             </div>
           </div>
           <div className="form-group">
-            <label>Link ảnh đại diện</label>
-            <input
-              type="text"
-              className="form-input"
-              value={form.avatarUrl}
-              onChange={set("avatarUrl")}
-              placeholder="https://..."
-            />
+            <label>Ảnh đại diện</label>
+            <div className="avatar-upload-row">
+              {form.avatarUrl && (
+                <img
+                  src={form.avatarUrl}
+                  alt="avatar"
+                  className="avatar-preview"
+                />
+              )}
+              <label className="btn btn-outline avatar-upload-btn">
+                {avatarUploading ? "Đang tải..." : "📷 Chọn ảnh"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleAvatarUpload}
+                  disabled={avatarUploading}
+                />
+              </label>
+            </div>
           </div>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? "Đang lưu..." : "Lưu thay đổi"}

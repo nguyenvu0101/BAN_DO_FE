@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import orderService from "../services/orderService";
@@ -8,8 +8,28 @@ const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const buyNow = location.state?.buyNow;
+
+  // Nếu mua ngay: dùng sản phẩm truyền vào, không dùng giỏ hàng
+  const displayItems = buyNow
+    ? [
+        {
+          id: buyNow.product.id,
+          productId: buyNow.product.id,
+          productName: buyNow.product.name,
+          quantity: buyNow.quantity,
+          subTotal: buyNow.product.price * buyNow.quantity,
+        },
+      ]
+    : cartItems;
+  const displayTotal = buyNow
+    ? buyNow.product.price * buyNow.quantity
+    : cartTotal;
   const [form, setForm] = useState({
     shippingAddress: user?.address || "",
+    recipientName: user?.fullName || "",
+    phoneNumber: user?.phoneNumber || "",
     note: "",
   });
   const [loading, setLoading] = useState(false);
@@ -19,19 +39,19 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (cartItems.length === 0) {
+    if (displayItems.length === 0) {
       setError("Giỏ hàng trống!");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const orderItems = cartItems.map((item) => ({
+      const orderItems = displayItems.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
       }));
       const created = await orderService.create({ ...form, items: orderItems });
-      await clearCart();
+      if (!buyNow) await clearCart();
       navigate(`/orders/${created.data.id}`);
     } catch (err) {
       setError(err.response?.data?.message || "Đặt hàng thất bại!");
@@ -48,12 +68,25 @@ const Checkout = () => {
           <h3>Thông tin giao hàng</h3>
           {error && <div className="alert alert-error">{error}</div>}
           <div className="form-group">
-            <label>Người nhận</label>
+            <label>Người nhận *</label>
             <input
               type="text"
               className="form-input"
-              value={user?.fullName || ""}
-              readOnly
+              value={form.recipientName}
+              onChange={set("recipientName")}
+              required
+              placeholder="Nhập tên người nhận"
+            />
+          </div>
+          <div className="form-group">
+            <label>Số điện thoại *</label>
+            <input
+              type="tel"
+              className="form-input"
+              value={form.phoneNumber}
+              onChange={set("phoneNumber")}
+              required
+              placeholder="Nhập số điện thoại"
             />
           </div>
           <div className="form-group">
@@ -88,7 +121,7 @@ const Checkout = () => {
 
         <div className="checkout-summary">
           <h3>Đơn hàng của bạn</h3>
-          {cartItems.map((item) => (
+          {displayItems.map((item) => (
             <div key={item.id} className="checkout-item">
               <span className="checkout-item-name">
                 {item.productName} x{item.quantity}
@@ -99,7 +132,7 @@ const Checkout = () => {
           <hr />
           <div className="summary-row summary-total">
             <span>Tổng cộng:</span>
-            <strong>{cartTotal.toLocaleString("vi-VN")}₫</strong>
+            <strong>{displayTotal.toLocaleString("vi-VN")}₫</strong>
           </div>
         </div>
       </div>
