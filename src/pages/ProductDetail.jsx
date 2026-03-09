@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import productService from "../services/productService";
+import reviewService from "../services/reviewService";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,12 +9,19 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user: authUser } = useAuth();
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+  const [canReview, setCanReview] = useState(false);
+  const [myRating, setMyRating] = useState(5);
+  const [myComment, setMyComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     productService
@@ -21,7 +29,16 @@ const ProductDetail = () => {
       .then((res) => setProduct(res.data))
       .catch(() => navigate("/shop"))
       .finally(() => setLoading(false));
-  }, [id, navigate]);
+    reviewService.getByProduct(id).then((res) => {
+      setReviews(res.data);
+    });
+    if (isLoggedIn) {
+      reviewService
+        .canReview(id)
+        .then((res) => setCanReview(res.data.canReview))
+        .catch(() => setCanReview(false));
+    }
+  }, [id, navigate, isLoggedIn]);
 
   const handleAddToCart = async () => {
     if (!isLoggedIn) {
@@ -52,6 +69,36 @@ const ProductDetail = () => {
       ? Math.round((1 - product.price / product.originalPrice) * 100)
       : null;
   const inStock = product.stockQuantity > 0;
+  const avgRating = reviews.length
+    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
+  const myExistingReview = reviews.find((r) => r.userId === authUser?.userId);
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await reviewService.createOrUpdate({
+        productId: Number(id),
+        rating: myRating,
+        comment: myComment,
+      });
+      const res = await reviewService.getByProduct(id);
+      setReviews(res.data);
+      setMyComment("");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+//   const handleDeleteReview = async (reviewId) => {
+//     await reviewService.delete(reviewId);
+//     setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+//   };
 
   return (
     <div className="container" style={{ padding: "32px 20px" }}>
@@ -158,6 +205,102 @@ const ProductDetail = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Reviews section */}
+      <div className="reviews-section">
+        <h2 className="reviews-title">
+          ⭐ Đánh giá sản phẩm
+          {avgRating && (
+            <span className="reviews-avg">
+              {avgRating} / 5 ({reviews.length} đánh giá)
+            </span>
+          )}
+        </h2>
+
+        {/* Write review form */}
+        {isLoggedIn && canReview ? (
+          myExistingReview ? (
+            <div className="review-done">
+              ✅ Bạn đã đánh giá sản phẩm này
+            </div>
+          ) : (
+            <form className="review-form" onSubmit={handleSubmitReview}>
+              <h4>Viết đánh giá</h4>
+              <div className="star-select">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`star-btn ${myRating >= s ? "active" : ""}`}
+                    onClick={() => setMyRating(s)}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="form-input"
+                placeholder="Nhận xét của bạn..."
+                value={myComment}
+                onChange={(e) => setMyComment(e.target.value)}
+                rows={3}
+              />
+              <button className="btn btn-primary" disabled={submitting}>
+                {submitting ? "Đang gửi..." : "Gửi đánh giá"}
+              </button>
+            </form>
+          )
+        ) : isLoggedIn && !canReview ? (
+          <div className="review-locked">
+            🔒 Chỉ khách hàng đã mua
+            sản phẩm này mới có thể đánh giá.
+          </div>
+        ) : null}
+
+        {/* Reviews list */}
+        {reviews.length === 0 ? (
+          <p className="reviews-empty">
+            Chưa có đánh giá nào. Hãy là người đầu tiên!
+          </p>
+        ) : (
+          <div className="reviews-list">
+            {reviews.map((r) => (
+              <div key={r.id} className="review-item">
+                <div className="review-header">
+                  <div className="review-avatar">
+                    {r.avatarUrl ? (
+                      <img src={r.avatarUrl} alt={r.username} />
+                    ) : (
+                      <span>
+                        {(r.fullName || r.username)?.[0]?.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <strong>{r.fullName || r.username}</strong>
+                    <div className="review-stars">
+                      {"★".repeat(r.rating)}
+                      {"☆".repeat(5 - r.rating)}
+                    </div>
+                  </div>
+                  <span className="review-date">
+                    {new Date(r.createdAt).toLocaleDateString("vi-VN")}
+                  </span>
+                  {/* {r.userId === authUser?.userId && (
+                    <button
+                      className="review-delete-btn"
+                      onClick={() => handleDeleteReview(r.id)}
+                    >
+                      🗑
+                    </button>
+                  )} */}
+                </div>
+                {r.comment && <p className="review-comment">{r.comment}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

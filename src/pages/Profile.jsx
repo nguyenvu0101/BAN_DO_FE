@@ -16,6 +16,15 @@ const Profile = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Change password state
+  const [pwForm, setPwForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [pwMessage, setPwMessage] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+
   useEffect(() => {
     userService
       .getMe()
@@ -62,6 +71,28 @@ const Profile = () => {
       setMessage("❌ Tải ảnh thất bại!");
     } finally {
       setAvatarUploading(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwMessage("❌ Mật khẩu mới không khớp!");
+      return;
+    }
+    setPwSaving(true);
+    setPwMessage("");
+    try {
+      await api.post("/users/change-password", {
+        currentPassword: pwForm.currentPassword,
+        newPassword: pwForm.newPassword,
+      });
+      setPwMessage("✅ Đổi mật khẩu thành công!");
+      setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch {
+      setPwMessage("❌ Mật khẩu hiện tại không đúng!");
+    } finally {
+      setPwSaving(false);
     }
   };
 
@@ -151,6 +182,61 @@ const Profile = () => {
           </div>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? "Đang lưu..." : "Lưu thay đổi"}
+          </button>
+        </form>
+      </div>
+
+      {/* Đổi mật khẩu */}
+      <div className="profile-card" style={{ marginTop: "24px" }}>
+        <h3 style={{ marginBottom: "16px" }}>🔑 Đổi mật khẩu</h3>
+        {pwMessage && (
+          <div
+            className={`alert ${pwMessage.startsWith("✅") ? "alert-success" : "alert-error"}`}
+          >
+            {pwMessage}
+          </div>
+        )}
+        <form onSubmit={handleChangePassword}>
+          <div className="form-group">
+            <label>Mật khẩu hiện tại</label>
+            <input
+              type="password"
+              className="form-input"
+              value={pwForm.currentPassword}
+              onChange={(e) =>
+                setPwForm((p) => ({ ...p, currentPassword: e.target.value }))
+              }
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Mật khẩu mới</label>
+            <input
+              type="password"
+              className="form-input"
+              value={pwForm.newPassword}
+              onChange={(e) =>
+                setPwForm((p) => ({ ...p, newPassword: e.target.value }))
+              }
+              minLength={6}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Xác nhận mật khẩu mới</label>
+            <input
+              type="password"
+              className="form-input"
+              value={pwForm.confirmPassword}
+              onChange={(e) =>
+                setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))
+              }
+              minLength={6}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={pwSaving}>
+            {pwSaving ? "Đang xử lý..." : "Đổi mật khẩu"}
           </button>
         </form>
       </div>

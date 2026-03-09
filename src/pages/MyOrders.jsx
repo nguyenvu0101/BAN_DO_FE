@@ -47,7 +47,7 @@ const MyOrders = () => {
           {orders.map((order) => (
             <div key={order.id} className="order-card">
               <div className="order-card-header">
-                <span className="order-id">Đơn #{order.id}</span>
+                <span className="order-id">Đơn {order.id}</span>
                 <span
                   className={`badge ${STATUS_COLOR[order.status] || "badge-info"}`}
                 >

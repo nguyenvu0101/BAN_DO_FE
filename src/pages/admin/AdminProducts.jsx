@@ -25,7 +25,7 @@ const AdminProducts = () => {
     setLoading(true);
     Promise.all([productService.getAll(), categoryService.getAll()])
       .then(([p, c]) => {
-        setProducts(p.data);
+        setProducts(Array.isArray(p.data) ? p.data : (p.data.items ?? []));
         setCategories(c.data);
       })
       .finally(() => setLoading(false));
@@ -34,7 +34,7 @@ const AdminProducts = () => {
   useEffect(() => {
     Promise.all([productService.getAll(), categoryService.getAll()])
       .then(([p, c]) => {
-        setProducts(p.data);
+        setProducts(Array.isArray(p.data) ? p.data : (p.data.items ?? []));
         setCategories(c.data);
       })
       .finally(() => setLoading(false));

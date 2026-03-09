@@ -24,7 +24,7 @@ const AdminDashboard = () => {
         .filter((ord) => ord.status === "Delivered")
         .reduce((sum, ord) => sum + (ord.totalAmount || 0), 0);
       setStats({
-        products: p.data.length,
+        products: p.data.total ?? p.data.items?.length ?? 0,
         categories: c.data.length,
         orders: o.data.length,
         users: u.data.length,

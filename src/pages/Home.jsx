@@ -31,7 +31,10 @@ const Home = () => {
   useEffect(() => {
     Promise.all([productService.getAll(), categoryService.getAll()])
       .then(([pRes, cRes]) => {
-        setFeaturedProducts(pRes.data.slice(0, 8));
+        const items = Array.isArray(pRes.data)
+          ? pRes.data
+          : (pRes.data.items ?? []);
+        setFeaturedProducts(items.slice(0, 8));
         setCategories(cRes.data);
       })
       .finally(() => setLoading(false));
