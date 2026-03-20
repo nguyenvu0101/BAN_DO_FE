@@ -1,13 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import chatService from "../services/chatService";
 
 const Navbar = () => {
   const { user, isLoggedIn, isAdmin, logout } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
   const [searchQ, setSearchQ] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Poll unread count every 30 seconds when logged in
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const fetchUnread = () => {
+      chatService.getUnreadCount()
+        .then((res) => setUnreadCount(res.data.unreadCount || 0))
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     logout();
@@ -44,6 +59,12 @@ const Navbar = () => {
 
         {/* Actions */}
         <div className="navbar-actions">
+          {isLoggedIn && (
+            <Link to="/chat" className="nav-chat-btn" title="Tin nhắn">
+              <span className="nav-chat-icon">💬</span>
+              {unreadCount > 0 && <span className="chat-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+            </Link>
+          )}
           <Link to="/cart" className="nav-cart-btn">
             <span className="nav-cart-icon">🛒</span>
             {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}

@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
 import PostProduct from "./pages/PostProduct";
+import Chat from "./pages/Chat";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -86,6 +87,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <PostProduct />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat/:conversationId"
+                element={
+                  <ProtectedRoute>
+                    <Chat />
                   </ProtectedRoute>
                 }
               />

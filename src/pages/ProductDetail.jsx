@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import productService from "../services/productService";
 import reviewService from "../services/reviewService";
+import chatService from "../services/chatService";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,6 +16,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const [startingChat, setStartingChat] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState([]);
@@ -53,6 +55,30 @@ const ProductDetail = () => {
       alert("Có lỗi xảy ra!");
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleChatWithSeller = async () => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
+    if (!product.sellerId || product.sellerId === authUser?.id) {
+      alert("Bạn không thể nhắn tin với chính mình!");
+      return;
+    }
+    setStartingChat(true);
+    try {
+      const res = await chatService.createConversation({
+        recipientId: product.sellerId,
+        productId: product.id,
+        initialMessage: `Xin chào! Tôi quan tâm đến sản phẩm "${product.name}" của bạn.`,
+      });
+      navigate(`/chat/${res.data.id}`);
+    } catch {
+      alert("Không thể bắt đầu cuộc trò chuyện. Vui lòng thử lại!");
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -161,6 +187,27 @@ const ProductDetail = () => {
             )}
           </div>
 
+          {product.location && (
+            <div className="pd-meta-row">
+              <span className="pd-meta-label">Địa điểm</span>
+              <span>📍 {product.location}</span>
+            </div>
+          )}
+
+          {product.soldCount > 0 && (
+            <div className="pd-meta-row">
+              <span className="pd-meta-label">Đã bán</span>
+              <span style={{ color: "#ee4d2d", fontWeight: 600 }}>{product.soldCount} sản phẩm</span>
+            </div>
+          )}
+
+          {product.averageRating > 0 && (
+            <div className="pd-meta-row">
+              <span className="pd-meta-label">Đánh giá</span>
+              <span style={{ color: "#f5a623" }}>⭐ {product.averageRating} ({product.reviewCount} đánh giá)</span>
+            </div>
+          )}
+
           <div className="pd-meta-row">
             <span className="pd-meta-label">Số lượng</span>
             <div className="quantity-control">
@@ -203,6 +250,15 @@ const ProductDetail = () => {
             >
               Mua Ngay
             </button>
+            {isLoggedIn && authUser?.id !== product.sellerId && (
+              <button
+                className="pd-btn-chat"
+                onClick={handleChatWithSeller}
+                disabled={startingChat}
+              >
+                {startingChat ? "..." : "💬 Chat với người bán"}
+              </button>
+            )}
           </div>
         </div>
       </div>

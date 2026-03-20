@@ -42,6 +42,12 @@ const ProductCard = ({ product }) => {
         <div className="product-card-body">
           <h3 className="product-card-name">{product.name}</h3>
           <p className="product-card-category">{product.categoryName || ""}</p>
+          {product.location && (
+            <p className="product-card-location">📍 {product.location}</p>
+          )}
+          {product.soldCount > 0 && (
+            <p className="product-card-sold">Đã bán {product.soldCount}</p>
+          )}
           <div className="product-card-price-row">
             <span className="product-card-price">
               {product.price?.toLocaleString("vi-VN")}đ

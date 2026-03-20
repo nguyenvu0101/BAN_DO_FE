@@ -9,6 +9,7 @@ const SORT_OPTIONS = [
   { value: "price_asc", label: "Giá tăng dần" },
   { value: "price_desc", label: "Giá giảm dần" },
   { value: "name", label: "Tên A-Z" },
+  { value: "best_selling", label: "Bán chạy" },
 ];
 
 const Shop = () => {
@@ -21,6 +22,7 @@ const Shop = () => {
     search: searchParams.get("q") || "",
     minPrice: "",
     maxPrice: "",
+    location: "",
     sortBy: "newest",
     page: 1,
     pageSize: 12,
@@ -37,6 +39,7 @@ const Shop = () => {
     if (filters.search) params.search = filters.search;
     if (filters.minPrice) params.minPrice = filters.minPrice;
     if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+    if (filters.location) params.location = filters.location;
 
     productService
       .getFiltered(params)
@@ -53,7 +56,7 @@ const Shop = () => {
 
   const resetFilters = () => {
     setLoading(true);
-    setFilters({ categoryId: "", search: "", minPrice: "", maxPrice: "", sortBy: "newest", page: 1, pageSize: 12 });
+    setFilters({ categoryId: "", search: "", minPrice: "", maxPrice: "", location: "", sortBy: "newest", page: 1, pageSize: 12 });
   };
 
   return (
@@ -124,7 +127,17 @@ const Shop = () => {
               min={0}
             />
           </div>
-          <button className="btn btn-outline w-full" style={{ marginTop: "8px" }} onClick={resetFilters}>
+
+          <h3 style={{ marginTop: "24px" }}>Địa điểm</h3>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="VD: Hồ Chí Minh"
+            value={filters.location}
+            onChange={(e) => setFilter("location", e.target.value)}
+          />
+
+          <button className="btn btn-outline w-full" style={{ marginTop: "16px" }} onClick={resetFilters}>
             Xóa bộ lọc
           </button>
         </aside>

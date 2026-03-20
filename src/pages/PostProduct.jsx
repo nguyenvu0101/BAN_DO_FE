@@ -19,6 +19,7 @@ const PostProduct = () => {
     originalPrice: "",
     stockQuantity: "",
     categoryId: "",
+    location: "",
   });
 
   useEffect(() => {
@@ -75,6 +76,7 @@ const PostProduct = () => {
         imageUrls,
         imageUrl: imageUrls[0] || null,
         categoryId: parseInt(form.categoryId),
+        location: form.location || null,
       };
       const res = await productService.create(payload);
       setSuccess(true);
@@ -224,6 +226,17 @@ const PostProduct = () => {
               onChange={set("description")}
               rows={5}
               placeholder="Mô tả chi tiết về sản phẩm..."
+            />
+          </div>
+
+          <div className="form-group">
+            <label>📍 Địa điểm</label>
+            <input
+              type="text"
+              className="form-input"
+              value={form.location}
+              onChange={set("location")}
+              placeholder="VD: Hồ Chí Minh, Hà Nội..."
             />
           </div>
 
